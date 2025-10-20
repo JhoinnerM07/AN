@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Centro Alto Rendimiento — Atlético Nacional</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#00aa4d" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ======== PALETA AJUSTADA A AN ======== */
+    :root{
+      --an-green:#00aa4d;         /* franja superior */
+      --an-black:#121212;         /* franja negra */
+      --bg:#0b0c0d;               /* fondo app */
+      --panel:#17181a;            /* paneles */
+      --stroke:#2a2c30;
+      --text:#f2f4f3;
+      --muted:#a7b0ad;
+      --accent:#00aa4d;
+
+      --r:16px;
+      --shadow:0 20px 50px #0009;
+
+      --brand-top-h:40px;
+      --brand-main-h:72px;
+      --brand-total:calc(var(--brand-top-h) + var(--brand-main-h));
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+
+    /* ======== BARRAS DE MARCA ======== */
+    .brand-top{
+      position:fixed; top:0; left:0; right:0; height:var(--brand-top-h);
+      background:var(--an-green); color:#001; display:flex; align-items:center; justify-content:center;
+      font-weight:800; letter-spacing:.2px; z-index:1000;
+      text-transform:uppercase;
+    }
+    .brand-main{
+      position:fixed; top:var(--brand-top-h); left:0; right:0; height:var(--brand-main-h);
+      background:var(--an-black); color:#fff; z-index:999;
+      display:flex; align-items:center; justify-content:space-between; padding:0 20px;
+      box-shadow:0 1px 0 #ffffff10 inset;
+    }
+    .brand-main img{height:48px; max-width:45vw; object-fit:contain}
+
+    /* ======== MAPA ======== */
+    #mappedin-map{
+      position:fixed; top:var(--brand-total); left:0; right:0; bottom:0;
+      background:#0e0f10;
+    }
+
+    /* ======== UI IZQUIERDA ======== */
+    .ui{
+      position:fixed; top:calc(var(--brand-total) + 16px); left:20px; width:420px;
+      display:flex; flex-direction:column; gap:14px;
+      background:var(--panel); border:1px solid var(--stroke); border-radius:var(--r);
+      padding:14px; box-shadow:var(--shadow); backdrop-filter: blur(8px); z-index:5;
+    }
+    .group{display:flex; flex-direction:column; gap:8px}
+    .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    label{font-size:12px; color:var(--muted)}
+    input,select,button{
+      background:#121316; color:var(--text); border:1px solid var(--stroke);
+      border-radius:12px; padding:10px 12px; font-size:14px;
+    }
+    input,select{width:100%}
+    button{cursor:pointer; transition:transform .04s ease, filter .2s}
+    button:hover{transform:translateY(-1px); filter:brightness(1.05)}
+    .btn-accent{border-color:#2bffd7}
+
+    .chips{display:flex; flex-wrap:wrap; gap:8px}
+    .chip-act{background:#121316; border:1px solid #2b2e33; border-radius:999px; padding:7px 11px; font-size:12px; cursor:pointer;}
+    .chip-act:hover{ border-color:#3d434b; }
+
+    .ac-wrap{position:relative}
+    .ac-list{
+      position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:6;
+      background:#121316; border:1px solid var(--stroke); border-radius:12px; max-height:260px; overflow:auto;
+      box-shadow:0 16px 36px #0009;
+    }
+    .ac-item{padding:10px 12px; cursor:pointer; border-bottom:1px solid #1d2025}
+    .ac-item:last-child{border-bottom:0}
+    .ac-item:hover{background:#181a1e}
+
+    .summary{display:flex; align-items:center; gap:10px; font-size:13px;
+      border:1px dashed #2bffd722; color:#bfe8d3; border-radius:12px; padding:10px 12px;}
+    .dot{width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 16px var(--accent);}
+    .muted{color:var(--muted); font-size:12px}
+
+    /* ======== PANEL DERECHA ======== */
+    .panel{
+      position:fixed; right:20px; top:calc(var(--brand-total) + 16px); width:420px; max-height:70vh; overflow:auto; z-index:5;
+      background:var(--panel); border:1px solid var(--stroke); border-radius:var(--r);
+      box-shadow:var(--shadow); backdrop-filter: blur(8px);
+    }
+    .panel-header{display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid var(--stroke)}
+    .panel-title{margin:0; font-size:15px; font-weight:700}
+    .panel-toggle{background:#121316; padding:8px 10px}
+    .panel-body{padding:10px 12px; display:none}
+    .steps{display:flex; flex-direction:column; gap:8px}
+    .step{background:#121316; border:1px solid var(--stroke); border-radius:12px; padding:10px; font-size:13px}
+
+    .toast{position:fixed; left:20px; bottom:20px; max-width:520px;
+      background:linear-gradient(180deg,#16181b,#14161a); border:1px solid #2b2f35; border-radius:14px;
+      padding:10px 12px; box-shadow:var(--shadow); display:flex; align-items:center; gap:10px;}
+    .toast.hide{display:none}
+
+    .loader{position:fixed; inset:0; display:grid; place-items:center; z-index:9; background:#0b0c0de6; transition:opacity .3s ease;}
+    .spinner{width:56px; height:56px; border-radius:50%; border:3px solid #111; border-top-color:var(--accent); animation:spin .9s linear infinite; box-shadow:0 0 24px #00aa4d55;}
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+
+    @media (max-width: 1100px){
+      .ui{width:auto; left:20px; right:20px}
+      .panel{display:none}
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ======== BARRAS AL ESTILO ATLÉTICO NACIONAL ======== -->
+  <div class="brand-top">Demo Indoor Centro de alto rendimiento</div>
+  <div class="brand-main">
+    <!-- IZQUIERDA: logo Atlético Nacional  (pon tu archivo en /logos/) -->
+    <img src="logos/Nacional_log.svg" alt="Atlético Nacional" />
+    <!-- DERECHA: tu logo (pon tu archivo en /logos/) -->
+    <img src="logos/CNID.jpg" alt="CNID" />
+  </div>
+
+  <!-- ======== MAPA ======== -->
+  <div id="mappedin-map" aria-label="Mapa 3D"></div>
+
+  <!-- Loader -->
+  <div id="loader" class="loader" aria-hidden="false"><div class="spinner"></div></div>
+
+  <!-- Controles -->
+  <section class="ui" role="region" aria-label="Controles">
+    <div class="row">
+      <label for="floorSelect">Piso:</label>
+      <select id="floorSelect" title="Selecciona piso"></select>
+      <span class="chip" id="floorName">—</span>
+    </div>
+
+    <div class="group">
+      <label>Accesos rápidos</label>
+      <div id="quickChips" class="chips"></div>
+    </div>
+
+    <div class="group">
+      <label>Inicio</label>
+      <div class="ac-wrap">
+        <input id="inputFrom" placeholder="Escribe para buscar (ej. Gimnasio)" autocomplete="off"/>
+        <div id="acFrom" class="ac-list" style="display:none"></div>
+      </div>
+      <label>Destino</label>
+      <div class="ac-wrap">
+        <input id="inputTo" placeholder="Escribe para buscar (ej. Consultorio A)" autocomplete="off"/>
+        <div id="acTo" class="ac-list" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="btnCalc" class="btn-accent">Calcular ruta</button>
+      <button id="btnClearRoute">Limpiar ruta</button>
+    </div>
+
+    <!-- Etiquetas -->
+    <div class="row">
+      <button id="btnShowLabels" class="btn-accent">Mostrar etiquetas</button>
+      <button id="btnHideLabels">Ocultar etiquetas</button>
+    </div>
+
+    <div class="summary" id="summary" aria-live="polite">
+      <div class="dot" aria-hidden="true"></div>
+      <div><strong>Listo:</strong> elige inicio/destino o usa 2 clics en el mapa, luego <em>Calcular ruta</em>.</div>
+    </div>
+
+    <div class="muted">Tip: pulsa <span style="font-family:ui-monospace">Enter</span> en cualquiera de los campos para calcular.</div>
+  </section>
+
+  <!-- Instrucciones -->
+  <aside class="panel" role="region" aria-label="Instrucciones turn-by-turn">
+    <div class="panel-header">
+      <h3 class="panel-title">Instrucciones turn-by-turn</h3>
+      <button id="btnTogglePanel" class="panel-toggle" aria-expanded="false" aria-controls="panelBody">+</button>
+    </div>
+    <div id="panelBody" class="panel-body">
+      <div class="steps" id="steps"></div>
+      <div class="muted" style="padding-top:6px">Conexiones entre pisos se manejan automáticamente.</div>
+    </div>
+  </aside>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hide" role="status" aria-live="polite">
+    <div class="dot" aria-hidden="true"></div>
+    <div id="status">Cargando mapa…</div>
+  </div>
+
+  <!-- ======== APP SCRIPT ======== -->
+  <script type="module">
+    import { getMapData, show3dMap } from 'https://cdn.jsdelivr.net/npm/@mappedin/mappedin-js@6.0/lib/esm/index.min.js';
+
+    // === CREDENCIALES ===
+    const KEY='mik_Dqi4914zmZxKzntej52f607c0';
+    const SECRET='mis_Z6lePiducTuS0EmhqzBEbhh672nkxoVFOFi3Ilw1rcE9aa210ac';
+    const MAP_ID='68f11b65fb78f9000bbd4c87';
+
+    // DOM
+    const $ = (id) => document.getElementById(id);
+    const elMap = $('mappedin-map');
+    const floorSel = $('floorSelect'), floorNm = $('floorName');
+    const inputFrom = $('inputFrom'), inputTo = $('inputTo');
+    const acFrom = $('acFrom'), acTo = $('acTo');
+    const btnCalc = $('btnCalc'), btnClearRoute = $('btnClearRoute');
+    const btnShowLabels = $('btnShowLabels'), btnHideLabels = $('btnHideLabels');
+    const steps = $('steps'), panelBody = $('panelBody'), btnTogglePanel = $('btnTogglePanel');
+    const summary = $('summary'), toast = $('toast'), statusEl = $('status'), loader = $('loader');
+    const quickChips = $('quickChips');
+
+    const showToast = (t) => { statusEl.textContent = t; toast.classList.remove('hide'); clearTimeout(showToast._t); showToast._t = setTimeout(()=>toast.classList.add('hide'), 3800); };
+    const setSummary = (html) => { summary.innerHTML = '<div class="dot" aria-hidden="true"></div><div>'+html+'</div>'; };
+
+    // SDK
+    const mapData = await getMapData({ key: KEY, secret: SECRET, mapId: MAP_ID });
+    const mapView = await show3dMap(elMap, mapData);
+    loader.style.opacity = 0; setTimeout(()=> loader.style.display='none', 300);
+
+    // Interacción en espacios
+    mapData.getByType('space').forEach((space) => mapView.updateState(space, { interactive: true }));
+
+    // Pisos
+    const floors = mapData.getByType('floor');
+    floors.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.id; opt.textContent = f.name ?? f.id;
+      floorSel.appendChild(opt);
+    });
+    const setFloorUI = (floor) => { if (!floor) return; floorSel.value = floor.id; floorNm.textContent = floor.name ?? '—'; };
+    setFloorUI(mapView.currentFloor ?? floors[0]);
+    floorSel.addEventListener('change', ()=> mapView.setFloor(floorSel.value));
+
+    // ===== POIs (locations) y espacios =====
+    const allLocations = mapData.getByType('location').filter(l => !!l.name);
+    const allSpaces    = mapData.getByType('space').filter(s => !!s.name);
+
+    // Accesos rápidos (sobre locations si existen)
+    const preferred = ["Gimnasio","Consultorio A","Consultorio B","Vestier","Zona Húmeda","Oficina","Cocina Caliente","Lavado de Loza","Comedor","Sala de Procedimientos"];
+    const quick = (allLocations.length ? allLocations : allSpaces).filter(x => preferred.includes(x.name));
+    quick.forEach(x=>{
+      const b = document.createElement('button');
+      b.className = 'chip-act'; b.textContent = x.name;
+      b.addEventListener('click', ()=>{
+        if(!state.fromTarget){ selectTarget('from', x); inputFrom.value = x.name; inputFrom.focus(); }
+        else { selectTarget('to', x);   inputTo.value   = x.name; inputTo.focus(); }
+      });
+      quickChips.appendChild(b);
+    });
+
+    // ==== BÚSQUEDA con prioridad a LOCATIONS ====
+    function findByName(name){
+      const q = (name||'').trim().toLowerCase();
+      if (!q) return null;
+      const search = (arr)=> arr.find(o => o.name?.toLowerCase() === q)
+                          ||  arr.find(o => o.name?.toLowerCase().startsWith(q))
+                          ||  arr.find(o => q.split(/\s+/).every(t => o.name?.toLowerCase().includes(t)))
+                          ||  arr.find(o => o.name?.toLowerCase().includes(q));
+      return search(allLocations) || search(allSpaces) || null;
+    }
+
+    // Autocompletar (sobre LOCATIONS primero)
+    function buildSuggestions(q, which){
+      const listEl = which === 'from' ? acFrom : acTo;
+      const inputEl= which === 'from' ? inputFrom : inputTo;
+      const qn = (q||'').trim().toLowerCase();
+      if (!qn){ listEl.style.display='none'; listEl.innerHTML=''; return; }
+      const universe = allLocations.length ? allLocations : allSpaces;
+      const items = universe.filter(x => x.name.toLowerCase().includes(qn)).slice(0, 40);
+      if (!items.length){ listEl.style.display='none'; listEl.innerHTML=''; return; }
+      listEl.innerHTML = items.map(x=>`<div class="ac-item" data-id="${x.id}">${x.name}</div>`).join('');
+      listEl.style.display='block';
+      [...listEl.querySelectorAll('.ac-item')].forEach(div=>{
+        div.addEventListener('click', ()=>{
+          const id = div.getAttribute('data-id');
+          const x = universe.find(o=>o.id===id);
+          if (x) { selectTarget(which, x); inputEl.value = x.name; }
+          listEl.style.display='none'; inputEl.blur();
+        });
+      });
+    }
+    const debounce = (fn, ms=160)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
+    inputFrom.addEventListener('input', debounce(()=> buildSuggestions(inputFrom.value, 'from')));
+    inputTo  .addEventListener('input', debounce(()=> buildSuggestions(inputTo  .value, 'to')));
+    document.addEventListener('click', (e)=>{
+      if (!acFrom.contains(e.target) && e.target!==inputFrom) acFrom.style.display='none';
+      if (!acTo.contains(e.target)   && e.target!==inputTo)   acTo.style.display='none';
+    });
+
+    // Helpers de selección/ruteo
+    function labelForTarget(t){
+      if (!t) return '';
+      if ('latitude' in t) return `(${t.latitude.toFixed(5)}, ${t.longitude.toFixed(5)})`;
+      return t.name || 'Punto';
+    }
+    function focusTarget(entity){
+      const focus = (entity?.spaces?.[0]) || entity;
+      try{
+        const floor = focus?.defaultFloor || focus?.floor;
+        if (floor) mapView.setFloor(floor);
+        mapView.camera.focusOn(focus, { minZoom: 18, padding: 0.2 });
+      }catch{}
+      return focus;
+    }
+    function selectTarget(which, entity){
+      const routable = focusTarget(entity);
+      if (which === 'from') state.fromTarget = routable; else state.toTarget = routable;
+    }
+    function findAndSelect(which, name){
+      const entity = findByName(name);
+      if (entity) selectTarget(which, entity);
+    }
+
+    [inputFrom,inputTo].forEach(el=> el.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); calculateRoute(); }}));
+
+    const state = { fromTarget:null, toTarget:null };
+    const nearPathOptions = { pathOptions: { nearRadius: 1, farRadius: 1 } };
+
+    async function calculateRoute(){
+      steps.innerHTML = '';
+
+      if (!state.fromTarget && inputFrom.value) findAndSelect('from', inputFrom.value);
+      if (!state.toTarget   && inputTo.value)   findAndSelect('to',   inputTo.value);
+
+      if (!state.fromTarget || !state.toTarget){ showToast('Falta inicio o destino.'); return; }
+
+      const directions = await mapData.getDirections(state.fromTarget, state.toTarget);
+      if (!directions){ showToast('No se pudo calcular la ruta.'); return; }
+
+      mapView.Navigation.clear?.();
+      mapView.Navigation.draw(directions, nearPathOptions);
+
+      let total = 0;
+      directions.instructions.forEach((inst, i)=>{
+        total += (inst.distance || 0);
+        const p = document.createElement('div');
+        const bearing = inst?.action?.bearing ? ` ${inst.action.bearing}` : '';
+        p.className='step'; p.textContent = `${i+1}. ${inst.action.type}${bearing} en ${Math.round(inst.distance)} m.`;
+        steps.appendChild(p);
+      });
+      const dist = Math.round(total || directions.distance || 0);
+      const etaMin = dist ? Math.max(1, Math.round(dist/75)) : 1;
+      setSummary(`<strong>Ruta trazada</strong>: ${labelForTarget(state.fromTarget)} → ${labelForTarget(state.toTarget)} · <strong>${dist} m</strong> aprox · <strong>${etaMin} min</strong>.`);
+      showToast('Ruta lista.');
+    }
+    btnCalc.addEventListener('click', calculateRoute);
+
+    btnClearRoute.addEventListener('click', ()=>{
+      mapView.Navigation.clear?.(); mapView.Paths?.removeAll?.(); steps.innerHTML = '';
+      state.fromTarget = null; state.toTarget = null;
+      setSummary('<strong>Listo:</strong> elige inicio/destino o usa 2 clics en el mapa, luego <em>Calcular ruta</em>.');
+      showToast('Ruta limpia.');
+    });
+
+    // ===== Etiquetas con fotos/logos (auto) =====
+    let labelsEnabled = true;
+    function enableAutoLabels(){
+      try{
+        if (mapView.__EXPERIMENTAL__auto) { mapView.__EXPERIMENTAL__auto(); labelsEnabled = true; return true; }
+      }catch(e){}
+      return false;
+    }
+    async function manualLabelsForCurrentFloor(){
+      try{
+        mapView.Labels.removeAll();
+        const floorId = mapView.currentFloor?.id;
+        const spaces = allSpaces.filter(s => s.name && ((s.defaultFloor?.id ?? s.defaultFloor) === floorId || !s.defaultFloor));
+        for (const s of spaces){
+          const lp = (s.locationProfiles || []).find(p => p?.icon?.uri);
+          await mapView.Labels.add(s, s.name, {
+            interactive: true,
+            appearance: lp?.icon?.uri ? { icon: lp.icon.uri, iconSize: 26, iconFit: 'cover', iconVisible: true } : undefined
+          });
+        }
+        labelsEnabled = true;
+      }catch(e){}
+    }
+    function showLabels(){ if (!enableAutoLabels()) manualLabelsForCurrentFloor(); }
+    function hideLabels(){ try{ mapView.Labels.removeAll(); }catch{} labelsEnabled = false; }
+
+    // ===== OBJETOS AMARILLOS (overlay) =====
+    const yellow = '#f6c441';
+    const yellowMarkers = [];
+    function clearYellow(){ try{ yellowMarkers.forEach(m => mapView.Markers?.remove?.(m)); }catch{} yellowMarkers.length = 0; }
+    function drawYellowObjects(){
+      clearYellow();
+      try{
+        const floorId = mapView.currentFloor?.id;
+        const locs = allLocations.filter(l => (l.defaultFloor?.id ?? l.defaultFloor) === floorId || !l.defaultFloor);
+        locs.forEach(l=>{
+          const hasIcon = (l.icon?.uri) || (l.locationProfiles && l.locationProfiles.some(p=>p?.icon?.uri));
+          if (hasIcon) return;
+          const mk = mapView.Markers?.add ? mapView.Markers.add(l, { color: yellow, size: 12 }) : null;
+          if (mk) yellowMarkers.push(mk);
+        });
+      }catch{}
+    }
+
+    // Cargar por defecto
+    showLabels();
+    drawYellowObjects();
+    showToast('Mapa listo. Etiquetas con fotos activas.');
+
+    // Cambios de piso
+    mapView.on('floor-change', () => {
+      if (labelsEnabled && !mapView.__EXPERIMENTAL__auto) manualLabelsForCurrentFloor();
+      drawYellowObjects();
+    });
+
+    // Botones etiquetas
+    btnShowLabels.addEventListener('click', ()=>{ labelsEnabled = true; showLabels(); showToast('Etiquetas visibles.'); });
+    btnHideLabels.addEventListener('click', ()=>{ hideLabels(); showToast('Etiquetas ocultas.'); });
+
+    // Panel instrucciones (colapsable)
+    let expanded = false;
+    const updatePanel = ()=>{
+      panelBody.style.display = expanded ? 'block' : 'none';
+      btnTogglePanel.textContent = expanded ? '–' : '+';
+      btnTogglePanel.setAttribute('aria-expanded', String(expanded));
+    };
+    updatePanel();
+    btnTogglePanel.addEventListener('click', ()=>{ expanded = !expanded; updatePanel(); });
+
+    // Clics en el mapa: 1º inicio, 2º destino (prioriza location)
+    let clickStage = 0;
+    mapView.on('click', async (event) => {
+      const candidate = event?.locations?.[0] || event?.spaces?.[0] || event.coordinate;
+      const routable = candidate?.spaces?.[0] || candidate;
+      if (clickStage === 0) {
+        state.fromTarget = routable; inputFrom.value = labelForTarget(candidate); clickStage = 1;
+        showToast('Inicio fijado. Ahora elige el destino con otro clic o escribe y pulsa “Calcular ruta”.');
+      } else {
+        state.toTarget = routable; inputTo.value = labelForTarget(candidate); clickStage = 0;
+        showToast('Destino fijado. Pulsa “Calcular ruta”.');
+      }
+    });
+  </script>
+</body>
+</html>
