@@ -1,0 +1,10 @@
+# Enrutar TODO por el Edge Function (auth)
+[[edge_functions]]
+path = "/*"
+function = "auth"
+
+# (Opcional) Cabeceras para evitar cacheo en páginas HTML
+[[headers]]
+for = "/*"
+[headers.values]
+  Cache-Control = "no-cache"
